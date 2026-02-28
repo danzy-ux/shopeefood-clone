@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Tambah Menu</title>
+    <style>body{font-family:sans-serif;padding:20px;background:#f4f4f4} .card{background:white;padding:20px;border-radius:10px} input,button{width:100%;padding:12px;margin:10px 0;box-sizing:border-box}</style>
+</head>
+<body>
+    <div class="card">
+        <h2>Tambah Menu Berfoto</h2>
+        <form id="formMenu">
+            <input type="text" name="nama" placeholder="Nama Makanan (Ayam Geprek)" required>
+            <input type="number" name="harga" placeholder="Harga (20000)" required>
+            <input type="text" name="deskripsi" placeholder="Deskripsi Singkat">
+            <p>Pilih Foto Makanan:</p>
+            <input type="file" name="gambar" accept="image/*" required>
+            <button type="submit" style="background:orange;color:white;border:none;font-weight:bold">UPLOAD SEKARANG</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('formMenu').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = 'Sabar, lagi upload...';
+            const formData = new FormData(e.target);
+            const res = await fetch('/api/menu', { method: 'POST', body: formData });
+            if(res.ok) { alert('Berhasil! Foto sudah masuk Cloudinary.'); location.href='/index.html'; }
+            else { alert('Gagal! Cek API Secret kamu.'); btn.innerText = 'UPLOAD SEKARANG'; }
+        };
+    </script>
+</body>
+</html>
