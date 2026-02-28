@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopeeFood Clone</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; }
+        h1 { color: #ee4d2d; text-align: center; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; border-left: 5px solid #ee4d2d; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: #ee4d2d; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-buy { background: #28a745; margin-top: 10px; }
+        #section-menu { display: none; }
+        img.menu-img { width: 100%; border-radius: 10px; height: 200px; object-fit: cover; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍊 ShopeeFood</h1>
+
+        <div id="section-login" class="card">
+            <h3>Masuk Akun</h3>
+            <input type="email" id="email" placeholder="Email (test@gmail.com)">
+            <input type="password" id="password" placeholder="Password (123)">
+            <button class="btn" onclick="login()">MASUK</button>
+        </div>
+
+        <div id="section-menu">
+            <div id="user-info" style="margin-bottom: 15px; font-weight: bold; color: #ee4d2d;"></div>
+            
+            <h4>Daftar Menu Makanan</h4>
+            <div id="daftar-menu">Memuat menu...</div>
+
+            <div id="section-cart" class="card" style="border-left: 5px solid #28a745; margin-top: 20px; display: none;">
+                <h3>🛒 Keranjang Saya</h3>
+                <div id="isi-keranjang"></div>
+                <hr>
+                <h4 id="total-harga">Total: Rp 0</h4>
+                <button class="btn" style="background: #28a745;" onclick="checkout()">PESAN SEKARANG</button>
+            </div>
+
+            <div id="section-orders" class="card" style="border-left: 5px solid #007bff; margin-top: 20px;">
+                <h3>📦 Status Pesanan</h3>
+                <div id="daftar-pesanan">Belum ada pesanan</div>
+            </div>
+
+            <button onclick="logout()" class="btn" style="background:#666; margin-top:20px">Keluar</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok) { 
+                localStorage.setItem('userShopee', JSON.stringify(data.user)); 
+                location.reload(); 
+            } else { alert(data.pesan); }
+        }
+
+        async function loadMenu() {
+            const res = await fetch('/api/menu');
+            const data = await res.json();
+            const container = document.getElementById('daftar-menu');
+            container.innerHTML = data.map(item => `
+                <div class="card">
+                    <img src="${item.gambar || 'https://via.placeholder.com/150'}" class="menu-img">
+                    <b style="font-size:1.1em">${item.nama}</b><br>
+                    <span style="color:#ee4d2d; font-weight:bold">Rp ${item.harga.toLocaleString()}</span><br>
+                    <button class="btn btn-buy" onclick="beli('${item._id}')">BELI SEKARANG</button>
+                </div>`).join('');
+        }
+
+        async function beli(productId) {
+            const user = JSON.parse(localStorage.getItem('userShopee'));
+            await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, productId, jumlah: 1 })
+            });
+            loadCart();
+        }
+
+        async function loadCart() {
+            const user = JSON.parse(localStorage.getItem('userShopee'));
+            const res = await fetch('/api/cart/' + user.id);
+            const data = await res.json();
+            const sectionCart = document.getElementById('section-cart');
+            if (data.items && data.items.length > 0) {
+                sectionCart.style.display = 'block';
+                document.getElementById('isi-keranjang').innerHTML = data.items.map(i => `
+                    <div style="display:flex; justify-content:space-between">
+                        <span>${i.nama} x${i.jumlah}</span>
+                        <span>Rp ${(i.harga * i.jumlah).toLocaleString()}</span>
+                    </div>`).join('');
+                document.getElementById('total-harga').innerText = 'Total: Rp ' + data.totalHarga.toLocaleString();
+            } else { sectionCart.style.display = 'none'; }
+        }
+
+        async function loadOrders() {
+            const user = JSON.parse(localStorage.getItem('userShopee'));
+            const res = await fetch('/api/orders/' + user.id);
+            const data = await res.json();
+            if(data.length > 0) {
+                document.getElementById('daftar-pesanan').innerHTML = data.map(o => `
+                    <div style="border-bottom: 1px solid #eee; padding: 5px 0;">
+                        ID: ${o._id.slice(-5)} - <b style="color:#ee4d2d">${o.status}</b>
+                    </div>`).join('');
+            }
+        }
+
+        async function checkout() {
+            const user = JSON.parse(localStorage.getItem('userShopee'));
+            const res = await fetch('/api/checkout', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ userId: user.id }) 
+            });
+            if (res.ok) { alert('Pesanan Terkirim!'); location.reload(); }
+        }
+
+        const user = localStorage.getItem('userShopee');
+        if (user) {
+            document.getElementById('section-login').style.display = 'none';
+            document.getElementById('section-menu').style.display = 'block';
+            document.getElementById('user-info').innerText = 'Halo, ' + JSON.parse(user).nama + '! 👋';
+            loadMenu(); loadCart(); loadOrders();
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
