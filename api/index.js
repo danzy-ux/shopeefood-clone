@@ -18,10 +18,10 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-const User = require('./models/User'); 
-const Product = require('./models/Product'); 
-const Cart = require('./models/Cart');
-const Order = require('./models/Order');
+const User = require('../models/User'); 
+const Product = require('../models/Product'); 
+const Cart = require('../models/Cart');
+const Order = require('../models/Order');
 
 const app = express();
 app.use(express.json());
