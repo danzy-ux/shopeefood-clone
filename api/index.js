@@ -19,10 +19,10 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage: storage });
 
 // Jalur models sudah diperbaiki dengan ../
-const User = require('../models/User'); 
-const Product = require('../models/Product'); 
-const Cart = require('../models/Cart');
-const Order = require('../models/Order');
+const User = require('../models/user'); 
+const Product = require('../models/product'); 
+const Cart = require('../models/cart');
+const Order = require('../models/order');
 
 const app = express();
 app.use(express.json());
